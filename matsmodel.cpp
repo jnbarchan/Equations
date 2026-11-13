@@ -138,6 +138,11 @@ bool MatsModel::makeGoalFromPossible()
     return canBeMade;
 }
 
+qint64 MatsModel::time() const
+{
+    return _solutionGenerator->time();
+}
+
 qint64 MatsModel::evaluations() const
 {
     return _solutionGenerator->evaluations();

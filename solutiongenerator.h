@@ -6,6 +6,10 @@
 #include <QObject>
 #include <QMap>
 
+#include <QMutex>
+#include <QRunnable>
+#include <QThreadPool>
+
 #include "mathexpreval.h"
 
 struct DiceCount
@@ -30,6 +34,7 @@ public:
 
     void generate();
     bool hasSolution() const { return !_solutions.isEmpty(); }
+    qint64 time() const { return _time; }
     qint64 evaluations() const { return _evaluations; }
     const QStringList &solutions() const { return _solutions; };
     const QList<UniqueDiceSolution> &uniqueDiceSolutions() const { return _uniqueDiceSolutions; };
@@ -56,6 +61,32 @@ private:
 
 signals:
     void statusMessage(const QString &message);
+
+private:
+    struct JobResults
+    {
+        QMutex mutex;
+        QStringList solutions;
+        qsizetype evaluations = 0;
+    };
+
+    class EvaluationJob : public QRunnable
+    {
+    public:
+        EvaluationJob(SolutionGenerator *generator,
+                      const QList<int> &operands,
+                      const QList<char> &operators);
+
+        void run() override;
+
+    private:
+        SolutionGenerator *_generator;
+        QList<int> _operands;
+        QList<char> _operators;
+    };
+
+    JobResults _jobResults;
+    QThreadPool _threadPool;
 };
 
 #endif // SOLUTIONGENERATOR_H

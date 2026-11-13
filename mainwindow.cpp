@@ -166,7 +166,11 @@ bool MainWindow::chooseDieToMove(DieWidget *&dieWidget, MatWidget *&matWidget)
     matWidget = nullptr;
 
     QList<UniqueDiceSolution> uniqueDiceSolutions(matsModel->uniqueDiceSolutions());
-    qDebug() << __FUNCTION__ << "Evaluations:" << matsModel->evaluations() << "Solutions:" << matsModel->solutions().length() << "Uniques:" << uniqueDiceSolutions.length();
+    qDebug() << __FUNCTION__
+             << "Time:" << matsModel->time()
+             << "Evaluations:" << matsModel->evaluations()
+             << "Solutions:" << matsModel->solutions().length()
+             << "Uniques:" << uniqueDiceSolutions.length();
     if (uniqueDiceSolutions.isEmpty())
     {
         QMessageBox::information(this, "No Move", "No solution found!");

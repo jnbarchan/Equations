@@ -31,6 +31,7 @@ public:
     QString diceListToString(const DiceList &diceList) const;
 
     bool makeGoalFromPossible();
+    qint64 time() const;
     qint64 evaluations() const;
     const QStringList &solutions() const;
     const QList<UniqueDiceSolution> uniqueDiceSolutions() const;
