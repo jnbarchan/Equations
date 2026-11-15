@@ -1,6 +1,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QLocale>
+#include <QtConcurrent>
 
 #include "settings.h"
 #include "solutiongenerator.h"
@@ -8,7 +9,7 @@
 SolutionGenerator::SolutionGenerator(int goal, const QMap<int, DiceCount> &operandCounts, const QHash<char, DiceCount> &operatorCounts, QObject *parent)
     : QObject{parent}
 {
-    _debugOutput = true;
+    _debugOutput = false;
     _goal = goal;
     _operandCounts = operandCounts;
     _operatorCounts = operatorCounts;
@@ -40,6 +41,9 @@ QString SolutionGenerator::expressionToString(const QList<int> &operands, const 
 
 void SolutionGenerator::generate()
 {
+    _useThreads = g_settings->useThreads();
+    _futures.clear();
+
     _solutions.clear();
     _uniqueDiceSolutions.clear();
     _evaluations = 0L;
@@ -79,15 +83,13 @@ void SolutionGenerator::generate()
         QList<int> operands;
         QList<char> operators;
 
-        _jobResults.solutions.clear();
-        _jobResults.evaluations = 0;
-
         generate(i, operands, operators);
 
-        _threadPool.waitForDone();
-
-        _solutions.append(_jobResults.solutions);
-        _evaluations += _jobResults.evaluations;
+        if (_useThreads)
+        {
+            _threadPool.waitForDone();
+            collectFinishedJobs();
+        }
 
         int newSolutions =  _solutions.length() - prevSolutions;
         if (_debugOutput)
@@ -141,13 +143,19 @@ void SolutionGenerator::generate(int numOperands, QList<int> &operands, QList<ch
             if (numOperands == 1)
                 if (_remainingRequired == 0)
                 {
-                    // MathExprEval::EvalResults allResults = evaluate(operands, operators);
-                    // for (const MathExprEval::EvalResult &result : allResults)
-                    //     if (result.value == _goal)
-                    //         _solutions.append(QString::fromLatin1(result.expression));
-
-                    _threadPool.start(new EvaluationJob(this, operands, operators));
-                    _evaluations++;
+                    if (_useThreads)
+                    {
+                        _futures.append(QtConcurrent::run(&_threadPool,
+                                                          &SolutionGenerator::evaluateJob,
+                                                          this, operands, operators));
+                        if (_futures.size() >= 100)
+                            collectFinishedJobs();
+                    }
+                    else
+                    {
+                        JobResults jobResults =  evaluateJob(operands, operators);
+                        _solutions.append(jobResults.solutions);
+                        _evaluations += jobResults.evaluations;                    }
                 }
 
             generate(numOperands - 1, operands, operators);
@@ -182,18 +190,6 @@ void SolutionGenerator::generate(int numOperands, QList<int> &operands, QList<ch
     }
 }
 
-MathExprEval::EvalResults SolutionGenerator::evaluate(const QList<int> &operands, const QList<char> &operators)
-{
-    MathExprEval mee;
-    std::vector<int> vOperands(operands.constBegin(), operands.constEnd());
-    std::vector<char> vOperators(operators.constBegin(), operators.constEnd());
-
-    MathExprEval::EvalResults allResults = mee.evaluateAllParenthesisations(vOperands, vOperators);
-    // _evaluations += allResults.size();
-
-    return allResults;
-}
-
 QList<UniqueDiceSolution> SolutionGenerator::makeUniqueDiceSolutions() const
 {
     QHash<QString, UniqueDiceSolution> uniques;
@@ -210,23 +206,34 @@ QList<UniqueDiceSolution> SolutionGenerator::makeUniqueDiceSolutions() const
 }
 
 
-SolutionGenerator::EvaluationJob::EvaluationJob(SolutionGenerator *generator, const QList<int> &operands, const QList<char> &operators)
-    : _generator(generator),
-    _operands(operands),
-    _operators(operators)
+SolutionGenerator::JobResults SolutionGenerator::evaluateJob(const QList<int> &operands, const QList<char> &operators)
 {
-    setAutoDelete(true);
+    std::vector<int> vOperands(operands.constBegin(), operands.constEnd());
+    std::vector<char> vOperators(operators.constBegin(), operators.constEnd());
+
+    MathExprEval mee;
+    MathExprEval::EvalResults allResults = mee.evaluateAllParenthesisations(vOperands, vOperators);
+
+    JobResults jobResults;
+    for (const MathExprEval::EvalResult &result : allResults)
+        if (result.value == _goal)
+            jobResults.solutions.append(QString::fromLatin1(result.expression));
+    jobResults.evaluations = allResults.size();
+
+    return jobResults;
 }
 
-void SolutionGenerator::EvaluationJob::run()
+void SolutionGenerator::collectFinishedJobs()
 {
-    MathExprEval::EvalResults allResults = _generator->evaluate(_operands, _operators);
-    QStringList solutions;
-    for (const MathExprEval::EvalResult &result : allResults)
-        if (result.value == _generator->_goal)
-            solutions.append(QString::fromLatin1(result.expression));
-
-    QMutexLocker locker(&_generator->_jobResults.mutex);
-    _generator->_jobResults.evaluations += static_cast<qsizetype>(allResults.size());
-    _generator->_jobResults.solutions.append(solutions);
+    for (int i = _futures.size() - 1; i >= 0; i--)
+    {
+        QFuture<JobResults> &future = _futures[i];
+        if (future.isFinished())
+        {
+            JobResults results = future.result();
+            _solutions.append(results.solutions);
+            _evaluations += results.evaluations;
+            _futures.removeAt(i);
+        }
+    }
 }

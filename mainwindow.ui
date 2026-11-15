@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>729</width>
-    <height>524</height>
+    <width>962</width>
+    <height>582</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,8 @@
      <rect>
       <x>9</x>
       <y>9</y>
-      <width>701</width>
-      <height>481</height>
+      <width>921</width>
+      <height>521</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -126,7 +126,7 @@ QSplitter::handle:hover {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>729</width>
+     <width>962</width>
      <height>23</height>
     </rect>
    </property>

@@ -6,8 +6,7 @@
 #include <QObject>
 #include <QMap>
 
-#include <QMutex>
-#include <QRunnable>
+#include <QFuture>
 #include <QThreadPool>
 
 #include "mathexpreval.h"
@@ -56,7 +55,6 @@ private:
 
     QString expressionToString(const QList<int> &operands, const QList<char> &operators);
     void generate(int numOperands, QList<int> &operands, QList<char> &operators);
-    MathExprEval::EvalResults evaluate(const QList<int> &operands, const QList<char> &operators);
     QList<UniqueDiceSolution> makeUniqueDiceSolutions() const;
 
 signals:
@@ -65,28 +63,16 @@ signals:
 private:
     struct JobResults
     {
-        QMutex mutex;
         QStringList solutions;
         qsizetype evaluations = 0;
     };
 
-    class EvaluationJob : public QRunnable
-    {
-    public:
-        EvaluationJob(SolutionGenerator *generator,
-                      const QList<int> &operands,
-                      const QList<char> &operators);
-
-        void run() override;
-
-    private:
-        SolutionGenerator *_generator;
-        QList<int> _operands;
-        QList<char> _operators;
-    };
-
-    JobResults _jobResults;
+    bool _useThreads;
     QThreadPool _threadPool;
+    QList<QFuture<JobResults>> _futures;
+
+    SolutionGenerator::JobResults evaluateJob(const QList<int> &operands, const QList<char> &operators);
+    void collectFinishedJobs();
 };
 
 #endif // SOLUTIONGENERATOR_H

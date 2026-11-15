@@ -174,7 +174,7 @@ int MathExprEval::evaluateExpression(const std::vector<int> &valuesIn, const std
 
 MathExprEval::EvalResults MathExprEval::evaluateAllParenthesisations(const std::vector<int> &values, const std::vector<char> &operators)
 {
-    int count = static_cast<int>(values.size());
+    int count = values.size();
     memo.cache = std::vector<std::vector<EvalResults>>(count, std::vector<EvalResults>(count));
     memo.calculated = std::vector<std::vector<bool>>(count, std::vector<bool>(count, false));
 

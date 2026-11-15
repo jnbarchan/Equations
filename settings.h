@@ -16,6 +16,8 @@ public:
     void setMaxEvaluations(int newMaxEvaluations) { _maxEvaluations = newMaxEvaluations; }
     int maxTime() const { return _maxTime; }
     void setMaxTime(int newMaxTime) { _maxTime = newMaxTime; }
+    int useThreads() const { return _useThreads; }
+    void setUseThreads(int newUseThreads) { _useThreads = newUseThreads; }
 
 private:
     bool _useDiceColours[4];
@@ -23,6 +25,7 @@ private:
     int _maxOperands;
     int _maxEvaluations;
     int _maxTime;
+    bool _useThreads;
 };
 
 extern Settings *g_settings;

@@ -12,7 +12,11 @@ DieWidget::DieWidget(Die die) :
     setFrameShadow(QFrame::Raised);
     setLineWidth(2);
     setAlignment(Qt::AlignCenter);
-    setFixedSize(25, 25);
+    setFixedSize(40, 40);
+
+    QFont font = this->font();
+    font.setPointSizeF(font.pointSizeF() * 1.5);
+    setFont(font);
 
     QPalette palette = this->palette();
     palette.setColor(QPalette::WindowText, die.colour);

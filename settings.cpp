@@ -12,4 +12,5 @@ Settings::Settings()
     _maxOperands = 0;  //5;
     _maxEvaluations = 0;  //5000000;
     _maxTime = 10;  //10;
+    _useThreads = true;
 }

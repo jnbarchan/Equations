@@ -13,6 +13,7 @@ SettingsDialog::SettingsDialog(QWidget *parent)
     ui->spnMaxOperands->setValue(g_settings->maxOperands());
     ui->spnMaxEvaluations->setValue(g_settings->maxEvaluations());
     ui->spnMaxTime->setValue(g_settings->maxTime());
+    ui->chkUseThreads->setChecked(g_settings->useThreads());
 }
 
 SettingsDialog::~SettingsDialog()
@@ -28,6 +29,7 @@ void SettingsDialog::accept() /*override*/
     g_settings->setMaxOperands(ui->spnMaxOperands->value());
     g_settings->setMaxEvaluations(ui->spnMaxEvaluations->value());
     g_settings->setMaxTime(ui->spnMaxTime->value());
+    g_settings->setUseThreads(ui->chkUseThreads->isChecked());
 
     QDialog::accept();
 }
