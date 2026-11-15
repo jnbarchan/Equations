@@ -117,10 +117,13 @@ void SolutionGenerator::generate(int numOperands, QList<int> &operands, QList<ch
 {
     if (_maxEvaluations > 0 && _evaluations >= _maxEvaluations)
         return;
-    if (_maxTime > 0 && (_time = _elapsed.elapsed()) >= _maxTime)
+    qint64 prevTime = _time;
+    _time = _elapsed.elapsed();
+    if (_maxTime > 0 && _time >= _maxTime)
         return;
-    //VERYTEMPORARY
-    QCoreApplication::processEvents();
+
+    if (_time / 1000 != prevTime / 1000)
+        QCoreApplication::processEvents();
 
     bool wantOperand = (operands.length() == operators.length());
     if (numOperands == 0)
